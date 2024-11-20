@@ -17,18 +17,51 @@ const petIcons = {
 };
 
 export const NavPet = ({ type, name }: NavPetProps) => {
-  const isIdle = useIdleTimer(30000); // 30 seconds for demo purposes
+  const isIdle = useIdleTimer(30000);
   const [isHovered, setIsHovered] = useState(false);
+  const [position, setPosition] = useState({ x: window.innerWidth - 100, y: 20 });
+  const [targetPosition, setTargetPosition] = useState({ x: window.innerWidth - 100, y: 20 });
   const PetIcon = petIcons[type];
+
+  useEffect(() => {
+    console.log('Setting up mouse move listener');
+    const handleMouseMove = (e: MouseEvent) => {
+      // Only update target position when not idle
+      if (!isIdle) {
+        setTargetPosition({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [isIdle]);
+
+  useEffect(() => {
+    console.log('Animating pet movement');
+    const animatePosition = () => {
+      setPosition(current => ({
+        x: current.x + (targetPosition.x - current.x) * 0.05,
+        y: current.y + (targetPosition.y - current.y) * 0.05
+      }));
+      requestAnimationFrame(animatePosition);
+    };
+
+    const animation = requestAnimationFrame(animatePosition);
+    return () => cancelAnimationFrame(animation);
+  }, [targetPosition]);
 
   return (
     <div
       className={cn(
-        "fixed top-4 right-4 p-3 rounded-full bg-white/80 backdrop-blur-sm",
-        "shadow-lg transition-all duration-300",
-        "animate-float cursor-pointer",
+        "fixed p-3 rounded-full bg-white/80 backdrop-blur-sm",
+        "shadow-lg transition-opacity duration-300",
+        "cursor-pointer",
         isIdle ? "animate-sleep" : "animate-wake"
       )}
+      style={{
+        transform: `translate(${position.x - 20}px, ${position.y - 20}px)`,
+        transition: 'transform 0.05s linear'
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
